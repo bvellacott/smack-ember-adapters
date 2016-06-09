@@ -1,4 +1,9 @@
-import Ember from 'ember';
+// TODO : 
+// - add hooks for incoming and outgoing records of specific types.
+// - create package for ember models, complete with pluggable triggers fired off the hooks
+//
+
+import Ember from 'ember'; 
 import DS from 'ember-data';
 import Where from 'npm:where-clause-evaluate';
 

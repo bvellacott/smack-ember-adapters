@@ -6,8 +6,6 @@ module.exports = function(defaults) {
   var app = new EmberAddon(defaults, {
     // Add options here
   });
-//      this._super.included(app);
-   // app.import(app.bowerDirectory + '/where-clause-evaluate/index.js');
 
   /*
     This build file specifes the options for the dummy test app of this
