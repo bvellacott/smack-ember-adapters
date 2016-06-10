@@ -1,7 +1,7 @@
 {
   "name": "smack-ember-adapters",
   "version": "1.0.0",
-  "repository" : "https://github.com/bvellacott/smack-ember-adapters",
+  "repository": "https://github.com/bvellacott/smack-ember-adapters",
   "description": "Store your Ember application data in LocalStorage, and query it with where clauses",
   "directories": {
     "doc": "doc",
@@ -12,7 +12,6 @@
     "start": "ember server",
     "test": "ember try:testall"
   },
-  "repository": "",
   "engines": {
     "node": ">= 0.10.0"
   },
@@ -53,8 +52,9 @@
     "ember-addon"
   ],
   "dependencies": {
-    "ember-cli-babel": "^5.1.5",
     "ember-browserify": "^1.1.9",
+    "ember-cli-babel": "^5.1.5",
+    "smack-js-compiler": "^1.0.2",
     "where-clause-evaluate": "^1.0.2"
   },
   "ember-addon": {
