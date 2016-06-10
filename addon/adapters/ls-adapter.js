@@ -5,6 +5,7 @@
 import Ember from 'ember'; 
 import DS from 'ember-data';
 import Where from 'npm:where-clause-evaluate';
+import SmackHooks from 'smack-ember-adapters/adapters/smackHooks';
 
 const DEFAULT_NAMESPACE = 'DS.LSAdapter';
 
@@ -57,11 +58,14 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       return Ember.RSVP.reject(new Error("Couldn't find record of" + " type '" + type.modelName + "' for the id '" + id + "'."));
     }
 
+    var res;
     if (allowRecursive) {
-      return this.loadRelationships(store, type, record);
+      res = this.loadRelationships(store, type, record);
     } else {
-      return Ember.RSVP.resolve(record);
+      res = Ember.RSVP.resolve(record);
     }
+    SmackHooks.onFind(store, type, res, allowRecursive);
+    return res;
   },
 
   findMany: function (store, type, ids, opts) {
@@ -89,11 +93,14 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       results.push(Ember.copy(record));
     }
 
+    var res;
     if (results.get('length') && allowRecursive) {
-      return this.loadRelationshipsForMany(store, type, results);
+      res = this.loadRelationshipsForMany(store, type, results);
     } else {
-      return Ember.RSVP.resolve(results);
+      res = Ember.RSVP.resolve(results);
     }
+    SmackHooks.onFindMany(store, type, res, allowRecursive);
+    return res;
   },
 
   // Supports queries that look like this:
@@ -114,11 +121,16 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var namespace = this._namespaceForType(type);
     var results = this._query(namespace.records, query);
 
-    if (results.get('length')) {
-      return this.loadRelationshipsForMany(store, type, results);
+    var allowRecursive = results.get('length');
+
+    var res;
+    if (allowRecursive) {
+      res = this.loadRelationshipsForMany(store, type, results);
     } else {
-      return Ember.RSVP.reject();
+      res = Ember.RSVP.reject();
     }
+    SmackHooks.onQuery(store, type, res, allowRecursive);
+    return res;
   },
 
   _evaluate: Where.newEvaluator({ cache : true }),
@@ -142,7 +154,9 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     for (var id in namespace.records) {
       results.push(Ember.copy(namespace.records[id]));
     }
-    return Ember.RSVP.resolve(results);
+    var res = Ember.RSVP.resolve(results);
+    SmackHooks.onFindAll(store, type, res);
+    return res;
   },
 
   createRecord: function (store, type, snapshot) {
@@ -152,7 +166,9 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
 
     namespaceRecords.records[recordHash.id] = recordHash;
 
+    SmackHooks.beforeCreate(store, type, namespaceRecords)
     this.persistData(type, namespaceRecords);
+    SmackHooks.afterCreate(store, type, namespaceRecords)
     return Ember.RSVP.resolve();
   },
 
@@ -163,7 +179,9 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
 
     namespaceRecords.records[id] = serializer.serialize(snapshot, {includeId: true});
 
+    SmackHooks.beforeUpdate(store, type, namespaceRecords)
     this.persistData(type, namespaceRecords);
+    SmackHooks.afterUpdate(store, type, namespaceRecords)
     return Ember.RSVP.resolve();
   },
 
@@ -171,9 +189,11 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var namespaceRecords = this._namespaceForType(type);
     var id = snapshot.id;
 
+    SmackHooks.beforeDelete(store, type, namespaceRecords)
     delete namespaceRecords.records[id];
-
     this.persistData(type, namespaceRecords);
+    SmackHooks.afterDelete(store, type, namespaceRecords)
+   
     return Ember.RSVP.resolve();
   },
 
