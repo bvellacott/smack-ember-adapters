@@ -40,6 +40,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   findRecord: function(store, type, id, opts) {
     var allowRecursive = true;
     var namespace = this._namespaceForType(type);
+    console.log(type);
     var record = Ember.A(namespace.records[id]);
 
     /**

@@ -1,6 +1,8 @@
 export default {
 	onFind : function(store, type, result, allowRecursive) {
-
+		console.log(type);
+		console.log(result);
+		console.log(allowRecursive);
 	},
 	onFindMany : function(store, type, result, allowRecursive) {
 		// console.log(type);
