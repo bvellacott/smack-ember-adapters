@@ -2,7 +2,7 @@ import { moduleForModel, test } from 'ember-qunit';
 
 moduleForModel('compilation-unit', 'Unit | Model | compilation unit', {
   // Specify the other units that are required for this test.
-  needs: []
+  needs: [ 'model:test-datum' ]
 });
 
 test('it exists', function(assert) {

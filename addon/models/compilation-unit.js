@@ -1,8 +1,9 @@
 import Model from 'ember-data/model';
-// import attr from 'ember-data/attr';
-// import { belongsTo, hasMany } from 'ember-data/relationships';
+import attr from 'ember-data/attr';
+import { belongsTo, hasMany } from 'ember-data/relationships';
 
 export default Model.extend({
-	name : DS.attr('string'),
-	source : DS.attr('string')
+	name : attr('string'),
+	source : attr('string'),
+	testData : hasMany('testDatum')
 });
