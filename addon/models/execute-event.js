@@ -6,5 +6,6 @@ export default Model.extend({
 	name : attr('string'),
 	arguments : attr(),
 	result : attr(),
-	success : attr('boolean')
+	success : attr('boolean'),
+	errorMessage : attr('string')
 });
