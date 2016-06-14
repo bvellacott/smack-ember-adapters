@@ -5,5 +5,6 @@ import attr from 'ember-data/attr';
 export default Model.extend({
 	source : attr('string'),
 	arguments : attr(),
-	result : attr()
+	result : attr(),
+	success : attr('boolean')
 });
