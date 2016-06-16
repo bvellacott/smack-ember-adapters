@@ -14,8 +14,8 @@ test('it exists', function(assert) {
 });
 
 test('on find', function(assert) {
-  let model = this.subject();
-  SmackHooks.onFind();
+  let model = this.subject({});
+  SmackHooks.onFind(null, 'compilation-unit');
   assert.ok(!!model);
   // let store = this.store();
   // Ember.run(model, 'save');

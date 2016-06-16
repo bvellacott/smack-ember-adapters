@@ -1,4 +1,8 @@
+import Ember from 'ember';
 import { moduleForModel, test } from 'ember-qunit';
+import SmackHooks from 'smack-ember-adapters/adapters/smackHooks';
+
+const {run, get, set} = Ember;
 
 moduleForModel('connection', 'Unit | Model | connection', {
   // Specify the other units that are required for this test.
@@ -9,4 +13,20 @@ test('it exists', function(assert) {
   let model = this.subject();
   // let store = this.store();
   assert.ok(!!model);
+});
+
+test('onFind - hook', function(t) {
+  let model = this.subject({ username : 'dude', password : 'IL0veMum', session : 'session 123' });
+  run(SmackHooks, 'onFind', null, 'connection', model);
+  t.equal(model.get('username'), 'dude', 'username unchanged');
+  t.notOk(model.get('password'), 'password hidden');
+  t.equal(model.get('session'), 'session 123', 'session unchanged');
+});
+
+test('beforeCreate - hook', function(t) {
+  let model = this.subject({ username : 'dude', password : 'IL0veMum' });
+  run(SmackHooks, 'beforeCreate', null, 'connection', model);
+  t.equal(model.get('username'), 'dude', 'username unchanged');
+  t.equal(model.get('password'), 'IL0veMum', 'password unchanged');
+  t.ok(!!model.get('session'), 'session id created');
 });

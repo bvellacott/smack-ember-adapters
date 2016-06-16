@@ -123,32 +123,26 @@ export default {
 	},
 	beforeCreate : function(store, type, result) {
 		var handle = beforeCreateHandlers[type];
-		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+		if(handle) handle(result);
 	},
 	afterCreate : function(store, type, result) {
 		var handle = afterCreateHandlers[type];
-		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+		if(handle) handle(result);
 	},
 	beforeUpdate : function(store, type, result) {
 		var handle = beforeUpdateHandlers[type];
-		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+		if(handle) handle(result);
 	},
 	afterUpdate : function(store, type, result) {
 		var handle = afterUpdateHandlers[type];
-		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+		if(handle) handle(result);
 	},
 	beforeDelete : function(store, type, result) {
 		var handle = beforeDeleteHandlers[type];
-		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+		if(handle) handle(result);
 	},
 	afterDelete : function(store, type, result) {
 		var handle = afterDeleteHandlers[type];
-		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+		if(handle) handle(result);
 	},
 };
