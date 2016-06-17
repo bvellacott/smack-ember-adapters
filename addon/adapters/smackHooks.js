@@ -3,21 +3,28 @@ import compile from 'npm:smack-js-compiler';
 var namespace = {};
 
 var getPackNamespace = function(pack) {
+	if(pack === '')
+		return namespace;
 	if(typeof pack === 'string')
 		pack = pack.split('.');
 	var current = namespace;
 	for(var i = 0; i < pack.length; i++)
 		current = current[pack[i]];
-	return current._f;
+	return current;
+}
+
+var getFuncNamespace = function(pack) {
+	return getPackNamespace(pack)._f;
 }
 
 var compileAndReturnAnonymousFunc = function(source, argNames) {
-	delete namespace.anonymous._f.anonymous;
+	delete namespace.anonymous;
 	var anonFuncSrc = 'pack anonymous;\n func anonymous(' + argNames.join(', ') + ') {\n' + 
 	source + '\n' +
 	generateReturnObjectAssignSrc('_rEToBJ_', argNames) +
 	'\n}';
 	var unit = compile(name, anonFuncSrc, namespace);
+	console.log(anonFuncSrc);
 	return namespace.anonymous._f.anonymous;
 }
 
@@ -52,8 +59,9 @@ var beforeCreateHandlers = {
 		try {
 			var pack = execRec.get('name').split('.');
 			var name = pack.pop();
-			var func = getPackNamespace(pack)[name];
+			var func = getFuncNamespace(pack)[name];
 			execRec.set('result', func.apply(namespace, execRec.get('arguments')));
+			execRec.set('success', true);
 		} catch(e) {
 			execRec.set('success', false);
 			execRec.set('errorMessage', e);
@@ -61,14 +69,16 @@ var beforeCreateHandlers = {
 	},
 	'execute-anonymous-event' : function(execRec) {
 		try {
+			var args = execRec.get('arguments');
 			var argNames = [];
 			var argValues = []
-			for(var argName in execRec.get('arguments')) {
+			for(var argName in args) {
 				argNames.push(argName);
 				argValues.push(args[argName]);
 			} 
 			var func = compileAndReturnAnonymousFunc(execRec.get('source'), argNames);
 			execRec.set('result', func.apply(namespace, argValues));
+			execRec.set('success', true);
 		} catch(e) {
 			execRec.set('success', false);
 			execRec.set('errorMessage', e);
@@ -81,7 +91,7 @@ var afterCreateHandlers = {
 
 var beforeDeleteHandlers = {
 	'compilation-unit' : function(unitRec) {
-		var funcs = getPackNamespace(unitRec.get('pack'));
+		var funcs = getFuncNamespace(unitRec.get('pack'));
 		var funcNames = unitRec.get('funcNames');
 		for(var i = 0; i < funcNames.length; i++)
 			delete funcs[funcNames[i]];
@@ -103,6 +113,7 @@ var afterUpdateHandlers = {
 
 export default {
 	getPackNamespace : getPackNamespace,
+	getFuncNamespace : getFuncNamespace,
 	onFind : function(store, type, result, allowRecursive) {
 		var handle = findHandlers[type];
 		if(handle) handle(result);
