@@ -82,9 +82,9 @@ var afterCreateHandlers = {
 var beforeDeleteHandlers = {
 	'compilation-unit' : function(unitRec) {
 		var funcs = getPackNamespace(unitRec.get('pack'));
-		eval('var funcs = ' + unit.pack + '._funcs_');
-		for(var i = 0; i < unitRec.get('funcNames').length; i++)
-			delete funcs[unit.funcNames[i]];
+		var funcNames = unitRec.get('funcNames');
+		for(var i = 0; i < funcNames.length; i++)
+			delete funcs[funcNames[i]];
 	},
 }
 
@@ -102,6 +102,7 @@ var afterUpdateHandlers = {
 }
 
 export default {
+	getPackNamespace : getPackNamespace,
 	onFind : function(store, type, result, allowRecursive) {
 		var handle = findHandlers[type];
 		if(handle) handle(result);
