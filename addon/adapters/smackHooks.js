@@ -112,6 +112,7 @@ var afterUpdateHandlers = {
 }
 
 export default {
+	_ns : namespace,
 	getPackNamespace : getPackNamespace,
 	getFuncNamespace : getFuncNamespace,
 	onFind : function(store, type, result, allowRecursive) {
