@@ -4,7 +4,7 @@ import FIXTURES from 'dummy/tests/helpers/smack-model-fixtures';
 import DS from 'ember-data';
 import LSAdapter from 'smack-ember-adapters/adapters/ls-adapter';
 
-// hoooks
+// hooks
 import SmackHooks from 'smack-ember-adapters/adapters/smackHooks';
 
 // models
@@ -12,12 +12,13 @@ import Connection from 'smack-ember-adapters/models/connection';
 import CompilationUnit from 'smack-ember-adapters/models/compilation-unit';
 import ExecuteEvent from 'smack-ember-adapters/models/execute-event';
 import ExecuteAnonymousEvent from 'smack-ember-adapters/models/execute-anonymous-event';
+import TestDatum from 'smack-ember-adapters/models/test-datum';
+
 
 import {module, test} from 'qunit';
 const {run, get, set} = Ember;
 
 let env, store;
-
 
 module('integration/adapters/ls-adapter - LSAdapter', {
   beforeEach() {
@@ -27,7 +28,9 @@ module('integration/adapters/ls-adapter - LSAdapter', {
       'connection': Connection,
       'compilation-unit': CompilationUnit,
       'execute-event': ExecuteEvent,
-      'execute-anonymous-event': ExecuteAnonymousEvent
+      'execute-anonymous-event': ExecuteAnonymousEvent,
+      'test-datum': TestDatum,
+      adapter: LSAdapter
     });
     store = env.store;
   },
@@ -38,22 +41,29 @@ module('integration/adapters/ls-adapter - LSAdapter', {
   }
 });
 
+test('exists through the store', function(assert) {
+  const lsAdapter = store.adapterFor('-default');
+  const lsSerializer = store.serializerFor('-default');
+  assert.ok(lsAdapter, 'LSAdapter exists');
+  assert.ok(lsSerializer, 'LSSerializer exists');
+});
+
 test('connection create and find - hook', function(t) {
   t.expect(7);
   // const list = run(store, 'createRecord', 'list', {name: 'Rambo'});
   var connection = run(store, 'createRecord', 'connection', { username : 'dude', password : 'IL0veMum' });
-  // t.equal(get(connection, 'username'), 'dude', 'username unchanged');
-  // t.equal(get(connection, 'password'), 'IL0veMum', 'password unchanged');
-  // t.ok(!!get(connection, 'session'), 'session id created');
+  t.equal(get(connection, 'username'), 'dude', 'username unchanged');
+  t.equal(get(connection, 'password'), 'IL0veMum', 'password unchanged');
+  t.ok(!!get(connection, 'session'), 'session id created');
 
-  // const done = t.async();
-  // run(store, 'findRecord', 'connection', get(connection, 'id')).then(con => {
-  //   t.equal(get(con, 'id'), get(connection, 'id'), 'id unchanged');
-  //   t.equal(get(con, 'username'), 'dude', 'username unchanged');
-  //   t.notOk(get(con, 'password'), 'password hidden');
-  //   t.equal(get(con, 'session'), get(connection, 'session'), 'session unchanged');
-  //   done();
-  // });
+  const done = t.async();
+  run(store, 'findRecord', 'connection', get(connection, 'id')).then(con => {
+    t.equal(get(con, 'id'), get(connection, 'id'), 'id unchanged');
+    t.equal(get(con, 'username'), 'dude', 'username unchanged');
+    t.notOk(get(con, 'password'), 'password hidden');
+    t.equal(get(con, 'session'), get(connection, 'session'), 'session unchanged');
+    done();
+  });
 });
 
 test('compilation-unit create, update, execute, execute anonymous and delete - hook', function(t) {
