@@ -16,14 +16,14 @@ test('it exists', function(assert) {
 });
 
 test('beforeCreate - hook', function(t) {
-  let model = this.subject({ name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' });
+  let model = { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' };
 
-  run(SmackHooks, 'beforeCreate', null, 'compilation-unit', model);
+  run(SmackHooks, 'beforeCreate', null, { modelName : 'compilation-unit'}, model);
 
-  t.equal(model.get('name'), 'sum', 'name unchanged');
-  t.equal(model.get('source'), 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
-  t.equal(model.get('pack'), 'math', 'package name set');
-  t.deepEqual(model.get('funcNames'), ['add', 'sub'], 'function names set');
+  t.equal(model.name, 'sum', 'name unchanged');
+  t.equal(model.source, 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
+  t.equal(model.pack, 'math', 'package name set');
+  t.deepEqual(model.funcNames, ['add', 'sub'], 'function names set');
   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
   
@@ -32,29 +32,29 @@ test('beforeCreate - hook', function(t) {
 });
 
 test('beforeDelete - hook', function(t) {
-  let model = this.subject({ name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' });
+  let model = { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' };
 
-  run(SmackHooks, 'beforeCreate', null, 'compilation-unit', model);
+  run(SmackHooks, 'beforeCreate', null, { modelName : 'compilation-unit'}, model);
   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
 
-  run(SmackHooks, 'beforeDelete', null, 'compilation-unit', model);
+  run(SmackHooks, 'beforeDelete', null, { modelName : 'compilation-unit'}, model);
   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'undefined', 'add function removed from the math namespace');
   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
 });
 
 test('beforeUpdate - hook', function(t) {
-  let model = this.subject({ name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' });
+  let model = { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' };
 
-  run(SmackHooks, 'beforeCreate', null, 'compilation-unit', model);
-  run(model, 'set', 'source', 'pack math; func add(a, b) { ret a + b; }');
-  run(SmackHooks, 'beforeUpdate', null, 'compilation-unit', model);
+  run(SmackHooks, 'beforeCreate', null, { modelName : 'compilation-unit'}, model);
+  model.source ='pack math; func add(a, b) { ret a + b; }';
+  run(SmackHooks, 'beforeUpdate', null, { modelName : 'compilation-unit'}, model);
 
   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function still in the math namespace');
   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
 
-  run(model, 'set', 'source', 'pack mathematics; func add(a, b) { ret a + b; }');
-  run(SmackHooks, 'beforeUpdate', null, 'compilation-unit', model);
+  model.source = 'pack mathematics; func add(a, b) { ret a + b; }';
+  run(SmackHooks, 'beforeUpdate', null, { modelName : 'compilation-unit'}, model);
 
   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'undefined', 'add function removed from the math namespace');
   t.equal(typeof SmackHooks.getFuncNamespace('mathematics').add, 'function', 'add function created in the mathematics namespace');

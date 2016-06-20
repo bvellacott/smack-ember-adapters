@@ -16,17 +16,17 @@ test('it exists', function(assert) {
 });
 
 test('onFind - hook', function(t) {
-  let model = this.subject({ username : 'dude', password : 'IL0veMum', session : 'session 123' });
-  run(SmackHooks, 'onFind', null, 'connection', model);
-  t.equal(model.get('username'), 'dude', 'username unchanged');
-  t.notOk(model.get('password'), 'password hidden');
-  t.equal(model.get('session'), 'session 123', 'session unchanged');
+  let model = { username : 'dude', password : 'IL0veMum', session : 'session 123' };
+  run(SmackHooks, 'onFind', null, { modelName : 'connection'}, model);
+  t.equal(model.username, 'dude', 'username unchanged');
+  t.notOk(model.password, 'password hidden');
+  t.equal(model.session, 'session 123', 'session unchanged');
 });
 
 test('beforeCreate - hook', function(t) {
-  let model = this.subject({ username : 'dude', password : 'IL0veMum' });
-  run(SmackHooks, 'beforeCreate', null, 'connection', model);
-  t.equal(model.get('username'), 'dude', 'username unchanged');
-  t.equal(model.get('password'), 'IL0veMum', 'password unchanged');
-  t.ok(!!model.get('session'), 'session id created');
+  let model = { username : 'dude', password : 'IL0veMum' };
+  run(SmackHooks, 'beforeCreate', null, { modelName : 'connection'}, model);
+  t.equal(model.username, 'dude', 'username unchanged');
+  t.equal(model.password, 'IL0veMum', 'password unchanged');
+  t.ok(!!model.session, 'session id created');
 });

@@ -41,47 +41,47 @@ var doNothing = function() {};
 
 var findHandlers = {
 	connection : function(con) {
-		con.set('password', null);
+		con.password = null;
 	},
 }
 
 var beforeCreateHandlers = {
 	'connection' : function(connection) {
-		connection.set('session', 'mock session id');
+		connection.session = 'mock session id';
 	},
 	'compilation-unit' : function(unitRec) {
 		var unit = null;
-		unit = compile(unitRec.get('name'), unitRec.get('source'), namespace);
-		unitRec.set('pack', unit.pack);
-		unitRec.set('funcNames', unit.funcNames);
+		unit = compile(unitRec.name, unitRec.source, namespace);
+		unitRec.pack = unit.pack;
+		unitRec.funcNames = unit.funcNames;
 	},
 	'execute-event' : function(execRec) {
 		try {
-			var pack = execRec.get('name').split('.');
+			var pack = execRec.name.split('.');
 			var name = pack.pop();
 			var func = getFuncNamespace(pack)[name];
-			execRec.set('result', func.apply(namespace, execRec.get('arguments')));
-			execRec.set('success', true);
+			execRec.result = func.apply(namespace, execRec.arguments);
+			execRec.success = true;
 		} catch(e) {
-			execRec.set('success', false);
-			execRec.set('errorMessage', e);
+			execRec.success = false;
+			execRec.errorMessage = e;
 		}
 	},
 	'execute-anonymous-event' : function(execRec) {
 		try {
-			var args = execRec.get('arguments');
+			var args = execRec.arguments;
 			var argNames = [];
 			var argValues = []
 			for(var argName in args) {
 				argNames.push(argName);
 				argValues.push(args[argName]);
 			} 
-			var func = compileAndReturnAnonymousFunc(execRec.get('source'), argNames);
-			execRec.set('result', func.apply(namespace, argValues));
-			execRec.set('success', true);
+			var func = compileAndReturnAnonymousFunc(execRec.source, argNames);
+			execRec.result = func.apply(namespace, argValues);
+			execRec.success = true;
 		} catch(e) {
-			execRec.set('success', false);
-			execRec.set('errorMessage', e);
+			execRec.success = false;
+			execRec.errorMessage = e;
 		}
 	},
 }
@@ -91,8 +91,8 @@ var afterCreateHandlers = {
 
 var beforeDeleteHandlers = {
 	'compilation-unit' : function(unitRec) {
-		var funcs = getFuncNamespace(unitRec.get('pack'));
-		var funcNames = unitRec.get('funcNames');
+		var funcs = getFuncNamespace(unitRec.pack);
+		var funcNames = unitRec.funcNames;
 		for(var i = 0; i < funcNames.length; i++)
 			delete funcs[funcNames[i]];
 	},
@@ -116,46 +116,46 @@ export default {
 	getPackNamespace : getPackNamespace,
 	getFuncNamespace : getFuncNamespace,
 	onFind : function(store, type, result, allowRecursive) {
-		var handle = findHandlers[type];
+		var handle = findHandlers[type.modelName];
 		if(handle) handle(result);
 	},
 	onFindMany : function(store, type, result, allowRecursive) {
-		var handle = findHandlers[type];
+		var handle = findHandlers[type.modelName];
 		for(var i = 0; handle && i < result.length; i++)
 			handle(result[i]);
 	},
 	onQuery : function(store, type, result, allowRecursive) {
-		var handle = findHandlers[type];
+		var handle = findHandlers[type.modelName];
 		for(var i = 0; handle && i < result.length; i++)
 			handle(result[i]);
 	},
 	onFindAll : function(store, type, result) {
-		var handle = findHandlers[type];
+		var handle = findHandlers[type.modelName];
 		for(var i = 0; handle && i < result.length; i++)
 			handle(result[i]);
 	},
 	beforeCreate : function(store, type, result) {
-		var handle = beforeCreateHandlers[type];
+		var handle = beforeCreateHandlers[type.modelName];
 		if(handle) handle(result);
 	},
 	afterCreate : function(store, type, result) {
-		var handle = afterCreateHandlers[type];
+		var handle = afterCreateHandlers[type.modelName];
 		if(handle) handle(result);
 	},
 	beforeUpdate : function(store, type, result) {
-		var handle = beforeUpdateHandlers[type];
+		var handle = beforeUpdateHandlers[type.modelName];
 		if(handle) handle(result);
 	},
 	afterUpdate : function(store, type, result) {
-		var handle = afterUpdateHandlers[type];
+		var handle = afterUpdateHandlers[type.modelName];
 		if(handle) handle(result);
 	},
 	beforeDelete : function(store, type, result) {
-		var handle = beforeDeleteHandlers[type];
+		var handle = beforeDeleteHandlers[type.modelName];
 		if(handle) handle(result);
 	},
 	afterDelete : function(store, type, result) {
-		var handle = afterDeleteHandlers[type];
+		var handle = afterDeleteHandlers[type.modelName];
 		if(handle) handle(result);
 	},
 };

@@ -16,15 +16,15 @@ test('it exists', function(assert) {
 });
 
 test('beforeCreate - hook - execute 1 + 1', function(t) {
-  let model = this.subject({ source : 'c = a + b', arguments : { a : 1, b : 1, c : 0 }});
-  run(SmackHooks, 'beforeCreate', null, 'execute-anonymous-event', model);
-  t.deepEqual(model.get('result'), { a : 1, b : 1, c : 2 }, 'execution result');
-  t.ok(model.get('success'), 'success status');
+  let model = { source : 'c = a + b;', arguments : { a : 1, b : 1, c : 0 }};
+  run(SmackHooks, 'beforeCreate', null, { modelName : 'execute-anonymous-event' }, model);
+  t.deepEqual(model.result, { a : 1, b : 1, c : 2 }, 'execution result');
+  t.ok(model.success, 'success status');
 });
 
 test('beforeCreate - hook - error', function(t) {
-  let model = this.subject({ source : 'nonexistent.property = 1', arguments : {}});
-  run(SmackHooks, 'beforeCreate', null, 'execute-anonymous-event', model);
-  t.notOk(model.get('success'), 'success status');
-  t.ok(model.get('errorMessage'), 'error message');
+  let model = { source : 'nonexistent["property"] = 1;', arguments : {}};
+  run(SmackHooks, 'beforeCreate', null, { modelName : 'execute-anonymous-event' }, model);
+  t.notOk(model.success, 'success status');
+  t.ok(model.errorMessage, 'error message');
 });
