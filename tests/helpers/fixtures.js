@@ -1,4 +1,20 @@
 export default {
+  'connection': {
+    records: {}
+  },
+
+  'compilation-unit': {
+    records: {}
+  },
+
+  'execute-event': {
+    records: {}
+  },
+
+  'execute-anonymous-event': {
+    records: {}
+  },
+  
   'list': {
     records: {
       'l1': { id: 'l1', name: 'one', done: true, items: ['i1', 'i2'] },

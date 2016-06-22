@@ -183,13 +183,13 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     namespaceRecords.records[recordHash.id] = recordHash;
 
     try {
-      SmackHooks.beforeCreate(store, type, namespaceRecords);
+      SmackHooks.beforeCreate(store, type, recordHash);
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before create hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
     this.persistData(type, namespaceRecords);
     try {
-      SmackHooks.afterCreate(store, type, namespaceRecords);
+      SmackHooks.afterCreate(store, type, recordHash);
     } catch(e) {
       return Ember.RSVP.reject(new Error("After create hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
@@ -200,17 +200,18 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var namespaceRecords = this._namespaceForType(type);
     var id = snapshot.id;
     var serializer = store.serializerFor(type.modelName);
+    var recordHash = serializer.serialize(snapshot, {includeId: true});
 
-    namespaceRecords.records[id] = serializer.serialize(snapshot, {includeId: true});
+    namespaceRecords.records[id] = recordHash;
 
     try {
-      SmackHooks.beforeUpdate(store, type, namespaceRecords)
+      SmackHooks.beforeUpdate(store, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before update hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
     this.persistData(type, namespaceRecords);
     try {
-      SmackHooks.afterUpdate(store, type, namespaceRecords)
+      SmackHooks.afterUpdate(store, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("After update hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
@@ -220,16 +221,17 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   deleteRecord: function (store, type, snapshot) {
     var namespaceRecords = this._namespaceForType(type);
     var id = snapshot.id;
+    var recordHash = namespaceRecords.records[id];
 
     try {
-      SmackHooks.beforeDelete(store, type, namespaceRecords)
+      SmackHooks.beforeDelete(store, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before delete hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
     delete namespaceRecords.records[id];
     this.persistData(type, namespaceRecords);
     try {
-      SmackHooks.afterDelete(store, type, namespaceRecords)
+      SmackHooks.afterDelete(store, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("After delete hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
