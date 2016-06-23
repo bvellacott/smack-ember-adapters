@@ -58,16 +58,17 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       return Ember.RSVP.reject(new Error("Couldn't find record of" + " type '" + type.modelName + "' for the id '" + id + "'."));
     }
 
+    try {
+      SmackHooks.onFind(store, type, record, allowRecursive);
+    } catch(e) {
+      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
+    }
+    
     var res;
     if (allowRecursive) {
       res = this.loadRelationships(store, type, record);
     } else {
       res = Ember.RSVP.resolve(record);
-    }
-    try {
-      SmackHooks.onFind(store, type, res, allowRecursive);
-    } catch(e) {
-      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
     return res;
   },
@@ -94,6 +95,11 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       if (!record || !record.hasOwnProperty('id')) {
         return Ember.RSVP.reject(new Error("Couldn't find record of type '" + type.modelName + "' for the id '" + ids[i] + "'."));
       }
+      try {
+        SmackHooks.onFind(store, type, res, record);
+      } catch(e) {
+        return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
+      }
       results.push(Ember.copy(record));
     }
 
@@ -102,11 +108,6 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       res = this.loadRelationshipsForMany(store, type, results);
     } else {
       res = Ember.RSVP.resolve(results);
-    }
-    try {
-      SmackHooks.onFindMany(store, type, res, allowRecursive);
-    } catch(e) {
-      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
     }
     return res;
   },
@@ -131,16 +132,16 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
 
     var allowRecursive = results.get('length');
 
+    try {
+      SmackHooks.onQuery(store, type, results, allowRecursive);
+    } catch(e) {
+      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
+    }
     var res;
     if (allowRecursive) {
       res = this.loadRelationshipsForMany(store, type, results);
     } else {
       res = Ember.RSVP.reject();
-    }
-    try {
-      SmackHooks.onQuery(store, type, res, allowRecursive);
-    } catch(e) {
-      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
     }
     return res;
   },
@@ -163,15 +164,15 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var namespace = this._namespaceForType(type),
       results = Ember.A([]);
 
+    try {
+      SmackHooks.onFindAll(store, type, namespace.records);
+    } catch(e) {
+      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
+    }
     for (var id in namespace.records) {
       results.push(Ember.copy(namespace.records[id]));
     }
     var res = Ember.RSVP.resolve(results);
-    try {
-      SmackHooks.onFindAll(store, type, res);
-    } catch(e) {
-      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
-    }
     return res;
   },
 
@@ -180,13 +181,13 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var serializer = store.serializerFor(type.modelName);
     var recordHash = serializer.serialize(snapshot, {includeId: true});
 
-    namespaceRecords.records[recordHash.id] = recordHash;
-
     try {
       SmackHooks.beforeCreate(store, type, recordHash);
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before create hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
+    namespaceRecords.records[recordHash.id] = recordHash;
+
     this.persistData(type, namespaceRecords);
     try {
       SmackHooks.afterCreate(store, type, recordHash);
@@ -202,13 +203,13 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var serializer = store.serializerFor(type.modelName);
     var recordHash = serializer.serialize(snapshot, {includeId: true});
 
-    namespaceRecords.records[id] = recordHash;
-
     try {
       SmackHooks.beforeUpdate(store, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before update hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
+    namespaceRecords.records[id] = recordHash;
+
     this.persistData(type, namespaceRecords);
     try {
       SmackHooks.afterUpdate(store, type, recordHash)

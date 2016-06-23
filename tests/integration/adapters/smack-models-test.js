@@ -48,44 +48,51 @@ test('exists through the store', function(assert) {
   assert.ok(lsSerializer, 'LSSerializer exists');
 });
 
-// test('connection create and find - hook', function(t) {
-//   t.expect(7);
-//   // const list = run(store, 'createRecord', 'list', {name: 'Rambo'});
-//   var connection = run(store, 'createRecord', 'connection', { username : 'dude', password : 'IL0veMum' });
-//   t.equal(get(connection, 'username'), 'dude', 'username unchanged');
-//   t.equal(get(connection, 'password'), 'IL0veMum', 'password unchanged');
-//   t.ok(!!get(connection, 'session'), 'session id created');
+test('connection create and find - hook', function(t) {
+  t.expect(6);
+  // const list = run(store, 'createRecord', 'list', {name: 'Rambo'});
+  var connection = run(store, 'createRecord', 'connection', { username : 'dude', password : 'IL0veMum' });
+  t.equal(get(connection, 'username'), 'dude', 'username unchanged');
+  t.equal(get(connection, 'password'), 'IL0veMum', 'password unchanged');
+  // t.ok(!!get(connection, 'session'), 'session id created');
 
-//   const done = t.async();
-//   run(store, 'findRecord', 'connection', get(connection, 'id')).then(con => {
-//     t.equal(get(con, 'id'), get(connection, 'id'), 'id unchanged');
-//     t.equal(get(con, 'username'), 'dude', 'username unchanged');
-//     t.notOk(get(con, 'password'), 'password hidden');
-//     t.equal(get(con, 'session'), get(connection, 'session'), 'session unchanged');
-//     done();
-//   });
-// });
+  const done = t.async();
+  run(connection, 'save').then(() => {
+    store.query('connection', 'where username = "dude"').then(records => {
+      let con = records.objectAt(0);
+      t.equal(get(con, 'id'), get(connection, 'id'), 'id unchanged');
+      t.equal(get(con, 'username'), 'dude', 'username unchanged');
+      t.notOk(get(con, 'password'), 'password hidden');
+      t.ok(get(con, 'session'), 'session id created');
+      done();
+    });
+  });
+});
 
 test('compilation-unit create, update, execute, execute anonymous and delete - hook', function(t) {
-  // t.expect();
+  t.expect(7);
+  const done = t.async();
 
   // create
   var cuc = run(store, 'createRecord', 'compilation-unit', 
       { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' });
-  var id = get(cuc, 'id');
+  run(cuc, 'save').then(() => {
+    var id = get(cuc, 'id');
 
-  const done = t.async();
-  run(store, 'findRecord', 'compilation-unit', get(cuc, 'id')).then(cuf => {
-    t.equal(get(cuf, 'id'), get(cuc, 'id'), 'id unchanged');
-    t.equal(get(cuf, 'name'), 'sum', 'name unchanged');
-    t.equal(get(cuf, 'source'), 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
-    t.equal(get(cuf, 'pack'), 'math', 'package name set');
-    t.deepEqual(get(cuf, 'funcNames'), ['add', 'sub'], 'function names set');
-    // t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
-    // t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
+    store.query('compilation-unit', 'where name = "sum"').then(records => {
+      let cuf = records.objectAt(0);
 
-    cuc = cuf;
-    done();
+      t.equal(get(cuf, 'id'), id, 'id unchanged');
+      t.equal(get(cuf, 'name'), 'sum', 'name unchanged');
+      t.equal(get(cuf, 'source'), 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
+      t.equal(get(cuf, 'pack'), 'math', 'package name set');
+      t.deepEqual(get(cuf, 'funcNames'), ['add', 'sub'], 'function names set');
+      t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
+      t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
+
+      cuc = cuf;
+      done();
+    });
   });
 
   // // update
