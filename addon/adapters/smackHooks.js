@@ -112,6 +112,9 @@ var afterUpdateHandlers = {
 }
 
 export default {
+	setNamespace(ns) {
+		this._ns = namespace = ns;
+	},
 	_ns : namespace,
 	getPackNamespace : getPackNamespace,
 	getFuncNamespace : getFuncNamespace,

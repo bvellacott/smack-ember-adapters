@@ -16,17 +16,21 @@ test('it exists', function(assert) {
 });
 
 test('onFind - hook', function(t) {
+  SmackHooks.setNamespace({});
   let model = { username : 'dude', password : 'IL0veMum', session : 'session 123' };
   run(SmackHooks, 'onFind', null, { modelName : 'connection'}, model);
   t.equal(model.username, 'dude', 'username unchanged');
   t.notOk(model.password, 'password hidden');
   t.equal(model.session, 'session 123', 'session unchanged');
+  SmackHooks.setNamespace({});
 });
 
 test('beforeCreate - hook', function(t) {
+  SmackHooks.setNamespace({});
   let model = { username : 'dude', password : 'IL0veMum' };
   run(SmackHooks, 'beforeCreate', null, { modelName : 'connection'}, model);
   t.equal(model.username, 'dude', 'username unchanged');
   t.equal(model.password, 'IL0veMum', 'password unchanged');
   t.ok(!!model.session, 'session id created');
+  SmackHooks.setNamespace({});
 });

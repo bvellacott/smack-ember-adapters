@@ -16,6 +16,7 @@ test('it exists', function(assert) {
 });
 
 test('beforeCreate - hook', function(t) {
+  SmackHooks.setNamespace({});
   let model = { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' };
 
   run(SmackHooks, 'beforeCreate', null, { modelName : 'compilation-unit'}, model);
@@ -27,11 +28,11 @@ test('beforeCreate - hook', function(t) {
   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
   
-  delete SmackHooks.getFuncNamespace('math').add;
-  delete SmackHooks.getFuncNamespace('math').sub;
+  SmackHooks.setNamespace({});
 });
 
 test('beforeDelete - hook', function(t) {
+  SmackHooks.setNamespace({});
   let model = { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' };
 
   run(SmackHooks, 'beforeCreate', null, { modelName : 'compilation-unit'}, model);
@@ -41,9 +42,11 @@ test('beforeDelete - hook', function(t) {
   run(SmackHooks, 'beforeDelete', null, { modelName : 'compilation-unit'}, model);
   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'undefined', 'add function removed from the math namespace');
   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
+  SmackHooks.setNamespace({});
 });
 
 test('beforeUpdate - hook', function(t) {
+  SmackHooks.setNamespace({});
   let model = { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' };
 
   run(SmackHooks, 'beforeCreate', null, { modelName : 'compilation-unit'}, model);
@@ -60,4 +63,5 @@ test('beforeUpdate - hook', function(t) {
   t.equal(typeof SmackHooks.getFuncNamespace('mathematics').add, 'function', 'add function created in the mathematics namespace');
 
   delete SmackHooks.getFuncNamespace('mathematics').add;
+  SmackHooks.setNamespace({});
 });

@@ -20,7 +20,7 @@ const {run, get, set} = Ember;
 
 let env, store;
 
-module('integration/adapters/ls-adapter - LSAdapter', {
+module('smack model hooks - LSAdapter', {
   beforeEach() {
     localStorage.setItem('DS.LSAdapter', JSON.stringify(FIXTURES));
 
@@ -69,8 +69,8 @@ test('connection create and find - hook', function(t) {
   });
 });
 
-test('compilation-unit create, update, execute, execute anonymous and delete - hook', function(t) {
-  t.expect(12);
+test('compilation-unit create, update and delete', function(t) {
+  t.expect(15);
   const done = t.async();
 
   // create
@@ -93,54 +93,65 @@ test('compilation-unit create, update, execute, execute anonymous and delete - h
       t.deepEqual(get(unit, 'funcNames'), ['add', 'error'], 'function names updated');
       t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function still in the math namespace');
       t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
-      done();
-    });
 
+      var id = get(unit, 'id');
+      unit.deleteRecord();
+      run(unit, 'save').then(() => {
+        t.notOk(store.hasRecordForId('compilation-unit', id), 'record still in store');
+        t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'undefined', 'add function removed from the math namespace');
+        t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
+        done();
+      });
+    });
+  });
+});
+
+test('execute', function(t) {
+  t.expect(4);
+  const done = t.async(2);
+
+  SmackHooks.getPackNamespace('')['math'] = { _f : {
+    add : function(a, b) { return a + b; },
+    error : function() { throw 'deliberate error'; }
+  }};
+
+  var addExec = run(store, 'createRecord', 'execute-event', { name : 'math.add', arguments : [1, 1] });
+  run(addExec, 'save').then(() => {
+    t.equal(get(addExec, 'result'), 2, 'execution result');
+    t.ok(get(addExec, 'success'), 'success status');
+    done();
   });
 
-  // update
+  var errExec = run(store, 'createRecord', 'execute-event', { name : 'math.error' });
+  run(errExec, 'save').then(() => {
+    t.notOk(get(errExec, 'success'), 'success status');
+    t.equal(get(errExec, 'errorMessage'), 'deliberate error', 'error message');
+    done();
+  });
+});
 
-  // // execute
-  // var ee = run(store, 'createRecord', 'execute-event', 
-  //     { name : 'math.add', arguments : [1, 1] });
-  // t.equal(get(ee, 'result'), 2, 'execution result');
-  // t.ok(get(ee, 'success'), 'success status');
+test('execute anonymous', function(t) {
+  t.expect(4);
+  const done = t.async(2);
 
-  // ee = run(store, 'createRecord', 'execute-event', 
-  //     { name : 'math.error' });
-  // t.notOk(get(ee, 'success'), 'success status');
-  // t.ok(get(ee, 'errorMessage'), 'error message');
+  SmackHooks.getPackNamespace('')['math'] = { _f : {
+    add : function(a, b) { return a + b; },
+    error : function() { throw 'deliberate error'; }
+  }};
 
-  // // execute anonymous
-  // var eae = run(store, 'createRecord', 'execute-anonymous-event', 
-  //     { source : 'c = a + b', arguments : { a : 1, b : 1, c : 0 }});
-  // t.deepEqual(get(eae, 'result'), { a : 1, b : 1, c : 2 }, 'execution result');
-  // t.ok(get(eae, 'success'), 'success status');
+  var addExec = run(store, 'createRecord', 'execute-anonymous-event', 
+      { source : 'c = a + b', arguments : { a : 1, b : 1, c : 0 }});
+  run(addExec, 'save').then(() => {
+    t.deepEqual(get(addExec, 'result'), { a : 1, b : 1, c : 2 }, 'execution result');
+    t.ok(get(addExec, 'success'), 'success status');
+    done();
+  });
 
-  // eae = run(store, 'createRecord', 'execute-anonymous-event', 
-  //     { source : 'nonexistent.property = 1', arguments : {}});
-  // t.notOk(get(eae, 'success'), 'success status');
-  // t.ok(get(eae, 'errorMessage'), 'error message');
-
-  // // update again
-  // run(cuc, 'set', 'source', 'pack mathematics; func add(a, b) { ret a + b; }');
-
-  // run(cuc, 'save').then(cuu => {
-  //   t.equal(get(cuu, 'id'), get(cuc, 'id'), 'id unchanged');
-  //   t.equal(get(cuu, 'name'), 'sum', 'name unchanged');
-  //   t.equal(get(cuu, 'source'), 'pack mathematics; func add(a, b) { ret a + b; }', 'source updated');
-  //   t.equal(get(cuu, 'pack'), 'mathematics', 'package name updated');
-  //   t.deepEqual(get(cuu, 'funcNames'), ['add'], 'function names unchanged');
-  //   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'undefined', 'add function removed from the math namespace');
-  //   t.equal(typeof SmackHooks.getFuncNamespace('mathematics').add, 'function', 'add function created in the mathematics namespace');
-  //   done();
-  //  });
-
-  // // delete
-  // run(cuc, 'delete').then(() => {
-  //   t.equal(store.hasRecordForId('compilation-unit', id), false, 'record still in store');
-  //   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'undefined', 'add function removed from the math namespace');
-  //   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
-  //   done();
-  // });
+  var errExec = run(store, 'createRecord', 'execute-anonymous-event', 
+      { source : 'math.error();' });
+  run(errExec, 'save').then(() => {
+    t.notOk(get(errExec, 'success'), 'success status');
+    t.equal(get(errExec, 'errorMessage'), 'deliberate error', 'error message');
+    done();
+  });
 });

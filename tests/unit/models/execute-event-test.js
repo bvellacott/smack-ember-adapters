@@ -16,6 +16,7 @@ test('it exists', function(assert) {
 });
 
 test('beforeCreate - hook - execute 1 + 1', function(t) {
+  SmackHooks.setNamespace({});
   SmackHooks.getPackNamespace('')['math'] = { _f : {
   	add : function(a, b) { return a + b; }
   }};
@@ -24,10 +25,11 @@ test('beforeCreate - hook - execute 1 + 1', function(t) {
   t.equal(model.result, 2, 'execution result');
   t.ok(model.success, 'success status');
   console.log(model.errorMessage);
-  delete SmackHooks.getPackNamespace('')['math'];
+  SmackHooks.setNamespace({});
 });
 
 test('beforeCreate - hook - error', function(t) {
+  SmackHooks.setNamespace({});
   SmackHooks.getPackNamespace('')['math'] = { _f : {
   	error : function() { throw 'deliberate error'; }
   }};
@@ -35,5 +37,5 @@ test('beforeCreate - hook - error', function(t) {
   run(SmackHooks, 'beforeCreate', null, { modelName : 'execute-event' }, model);
   t.notOk(model.success, 'success status');
   t.equal(model.errorMessage, 'deliberate error', 'error message');
-  delete SmackHooks.getPackNamespace('')['math'];
+  SmackHooks.setNamespace({});
 });
