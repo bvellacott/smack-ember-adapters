@@ -63,7 +63,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     } catch(e) {
       return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
-    
+
     var res;
     if (allowRecursive) {
       res = this.loadRelationships(store, type, record);
@@ -194,7 +194,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     } catch(e) {
       return Ember.RSVP.reject(new Error("After create hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
-    return Ember.RSVP.resolve();
+    return Ember.RSVP.resolve(Ember.A(recordHash));
   },
 
   updateRecord: function (store, type, snapshot) {
@@ -216,7 +216,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     } catch(e) {
       return Ember.RSVP.reject(new Error("After update hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
-    return Ember.RSVP.resolve();
+    return Ember.RSVP.resolve(Ember.A(recordHash));
   },
 
   deleteRecord: function (store, type, snapshot) {

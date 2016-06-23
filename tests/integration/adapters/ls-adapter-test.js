@@ -4,16 +4,6 @@ import FIXTURES from 'dummy/tests/helpers/fixtures';
 import DS from 'ember-data';
 import LSAdapter from 'smack-ember-adapters/adapters/ls-adapter';
 
-// hooks
-import SmackHooks from 'smack-ember-adapters/adapters/smackHooks';
-
-// models
-import Connection from 'smack-ember-adapters/models/connection';
-import CompilationUnit from 'smack-ember-adapters/models/compilation-unit';
-import ExecuteEvent from 'smack-ember-adapters/models/execute-event';
-import ExecuteAnonymousEvent from 'smack-ember-adapters/models/execute-anonymous-event';
-import TestDatum from 'smack-ember-adapters/models/test-datum';
-
 import {module, test} from 'qunit';
 const {run, get, set} = Ember;
 
@@ -57,11 +47,6 @@ module('integration/adapters/ls-adapter - LSAdapter', {
       order: Order,
       hour: Hour,
       person: Person,
-      'connection': Connection,
-      'compilation-unit': CompilationUnit,
-      'execute-event': ExecuteEvent,
-      'execute-anonymous-event': ExecuteAnonymousEvent,
-      'test-datum': TestDatum,
       adapter: LSAdapter
     });
     store = env.store;
@@ -69,7 +54,6 @@ module('integration/adapters/ls-adapter - LSAdapter', {
 
   afterEach() {
     run(store, 'destroy');
-    SmackHooks._ns = {};
   }
 });
 

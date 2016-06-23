@@ -70,44 +70,35 @@ test('connection create and find - hook', function(t) {
 });
 
 test('compilation-unit create, update, execute, execute anonymous and delete - hook', function(t) {
-  t.expect(7);
+  t.expect(12);
   const done = t.async();
 
   // create
-  var cuc = run(store, 'createRecord', 'compilation-unit', 
+  var unit = run(store, 'createRecord', 'compilation-unit', 
       { name : 'sum', source : 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' });
-  run(cuc, 'save').then(() => {
-    var id = get(cuc, 'id');
+  run(unit, 'save').then(() => {
+    t.equal(get(unit, 'name'), 'sum', 'name unchanged');
+    t.equal(get(unit, 'source'), 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
+    t.equal(get(unit, 'pack'), 'math', 'package name set');
+    t.deepEqual(get(unit, 'funcNames'), ['add', 'sub'], 'function names set');
+    t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
+    t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
 
-    store.query('compilation-unit', 'where name = "sum"').then(records => {
-      let cuf = records.objectAt(0);
+    run(unit, 'set', 'source', 'pack math; func add(a, b) { ret a + b; } func error() { nonexistent.param = 1; }');
 
-      t.equal(get(cuf, 'id'), id, 'id unchanged');
-      t.equal(get(cuf, 'name'), 'sum', 'name unchanged');
-      t.equal(get(cuf, 'source'), 'pack math; func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
-      t.equal(get(cuf, 'pack'), 'math', 'package name set');
-      t.deepEqual(get(cuf, 'funcNames'), ['add', 'sub'], 'function names set');
-      t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
-      t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
-
-      cuc = cuf;
+    run(unit, 'save').then(unit => {
+      t.equal(get(unit, 'name'), 'sum', 'name unchanged');
+      t.equal(get(unit, 'source'), 'pack math; func add(a, b) { ret a + b; } func error() { nonexistent.param = 1; }', 'source updated');
+      t.equal(get(unit, 'pack'), 'math', 'package name unchanged');
+      t.deepEqual(get(unit, 'funcNames'), ['add', 'error'], 'function names updated');
+      t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function still in the math namespace');
+      t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
       done();
     });
+
   });
 
-  // // update
-  // run(cuc, 'set', 'source', 'pack math; func add(a, b) { ret a + b; } func error() { nonexistent.param = 1; }');
-
-  // run(cuc, 'save').then(cuu => {
-  //   t.equal(get(cuu, 'id'), get(cuc, 'id'), 'id unchanged');
-  //   t.equal(get(cuu, 'name'), 'sum', 'name unchanged');
-  //   t.equal(get(cuu, 'source'), 'pack math; func add(a, b) { ret a + b; } func error() { nonexistent.param = 1; }', 'source updated');
-  //   t.equal(get(cuu, 'pack'), 'math', 'package name unchanged');
-  //   t.deepEqual(get(cuu, 'funcNames'), ['add', 'error'], 'function names updated');
-  //   t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function still in the math namespace');
-  //   t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
-  //   done();
-  // });
+  // update
 
   // // execute
   // var ee = run(store, 'createRecord', 'execute-event', 
