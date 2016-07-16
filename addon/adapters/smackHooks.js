@@ -1,6 +1,54 @@
 import compile from 'npm:smack-js-compiler';
 
-var namespace = {};
+function deserialiseNamespace(nsString) {
+	var ns = JSON.parse(nsString);
+	evalPack(ns);
+	return ns;
+}
+
+function evalPack(pack) {
+	for(var key in pack) {
+		if(key === '_f')
+			evalFuncs(pack._f);
+		else
+			evalPack(pack[key]);
+	}
+}
+
+function evalFuncs(_f) {
+	for(var key in _f) {
+		eval('_f[key] = ' + _f[key]);
+	}
+}
+
+var namespace = localStorage.getItem('smackNs');
+if(namespace && typeof namespace === 'string')
+	namespace = deserialiseNamespace(namespace);
+else
+	namespace = {};
+
+var serialiseNamespace = function() {
+	var nsCopy = copyPackForSerialising(namespace);
+	localStorage.setItem('smackNs', JSON.stringify(nsCopy));
+}
+
+var copyPackForSerialising = function(pack) {
+	var copy = {};
+	for(var key in pack) {
+		if(key === '_f')
+			copy._f = copyFuncsForSerialising(pack._f);
+		else
+			copy[key] = copyPackForSerialising(pack[key]);
+	}
+	return copy;
+}
+
+var copyFuncsForSerialising = function(_f) {
+	var copy = {};
+	for(var key in _f)
+		copy[key] = _f[key].toString();
+	return copy;
+}
 
 var getPackNamespace = function(pack) {
 	if(pack === '')
@@ -54,6 +102,7 @@ var beforeCreateHandlers = {
 		unit = compile(unitRec.name, unitRec.source, namespace);
 		unitRec.pack = unit.pack;
 		unitRec.funcNames = unit.funcNames;
+		serialiseNamespace();
 	},
 	'execute-event' : function(execRec) {
 		try {
@@ -77,6 +126,7 @@ var beforeCreateHandlers = {
 				argValues.push(args[argName]);
 			} 
 			var func = compileAndReturnAnonymousFunc(execRec.source, argNames);
+			serialiseNamespace();
 			execRec.result = func.apply(namespace, argValues);
 			execRec.success = true;
 		} catch(e) {
@@ -95,6 +145,7 @@ var beforeDeleteHandlers = {
 		var funcNames = unitRec.funcNames;
 		for(var i = 0; i < funcNames.length; i++)
 			delete funcs[funcNames[i]];
+		serialiseNamespace();
 	},
 }
 
