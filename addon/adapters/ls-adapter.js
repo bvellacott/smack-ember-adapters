@@ -1,8 +1,8 @@
-// TODO : 
+// TODO :
 // - add hooks for incoming and outgoing records of specific types.
 // - create package for ember models, complete with pluggable triggers fired off the hooks
 
-import Ember from 'ember'; 
+import Ember from 'ember';
 import DS from 'ember-data';
 import Where from 'npm:where-clause-evaluate';
 import SmackHooks from 'smack-ember-adapters/adapters/smackHooks';
@@ -55,13 +55,13 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     }
 
     if (!record || !record.hasOwnProperty('id')) {
-      return Ember.RSVP.reject(new Error("Couldn't find record of" + " type '" + type.modelName + "' for the id '" + id + "'."));
+      return Ember.RSVP.reject(new Error("Couldn't find record of type '" + type.modelName + "' for the id '" + id + "'."));
     }
 
     try {
-      SmackHooks.onFind(store, type, record, allowRecursive);
+      SmackHooks.onFind(this.loadData(), type, record, allowRecursive);
     } catch(e) {
-      return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
+      return Ember.RSVP.reject(new Error("On find hook failed on: type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
 
     var res;
@@ -96,7 +96,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
         return Ember.RSVP.reject(new Error("Couldn't find record of type '" + type.modelName + "' for the id '" + ids[i] + "'."));
       }
       try {
-        SmackHooks.onFind(store, type, res, record);
+        SmackHooks.onFind(this.loadData(), type, res, record);
       } catch(e) {
         return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
       }
@@ -133,7 +133,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var allowRecursive = results.get('length');
 
     try {
-      SmackHooks.onQuery(store, type, results, allowRecursive);
+      SmackHooks.onQuery(this.loadData(), type, results, allowRecursive);
     } catch(e) {
       return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
     }
@@ -165,7 +165,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       results = Ember.A([]);
 
     try {
-      SmackHooks.onFindAll(store, type, namespace.records);
+      SmackHooks.onFindAll(this.loadData(), type, namespace.records);
     } catch(e) {
       return Ember.RSVP.reject(new Error("On find hook failed on: " + " type '" + type.modelName + "'.\n\n" + e));
     }
@@ -181,8 +181,10 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var serializer = store.serializerFor(type.modelName);
     var recordHash = serializer.serialize(snapshot, {includeId: true});
 
+    var hash = this.loadData();
+
     try {
-      SmackHooks.beforeCreate(store, type, recordHash);
+      SmackHooks.beforeCreate(hash, type, recordHash);
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before create hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
@@ -190,7 +192,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
 
     this.persistData(type, namespaceRecords);
     try {
-      SmackHooks.afterCreate(store, type, recordHash);
+      SmackHooks.afterCreate(hash, type, recordHash);
     } catch(e) {
       return Ember.RSVP.reject(new Error("After create hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
@@ -203,8 +205,10 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var serializer = store.serializerFor(type.modelName);
     var recordHash = serializer.serialize(snapshot, {includeId: true});
 
+    var hash = this.loadData();
+
     try {
-      SmackHooks.beforeUpdate(store, type, recordHash)
+      SmackHooks.beforeUpdate(hash, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before update hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
@@ -212,7 +216,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
 
     this.persistData(type, namespaceRecords);
     try {
-      SmackHooks.afterUpdate(store, type, recordHash)
+      SmackHooks.afterUpdate(hash, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("After update hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
@@ -224,15 +228,17 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     var id = snapshot.id;
     var recordHash = namespaceRecords.records[id];
 
+    var hash = this.loadData();
+
     try {
-      SmackHooks.beforeDelete(store, type, recordHash)
+      SmackHooks.beforeDelete(hash, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("Before delete hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }
     delete namespaceRecords.records[id];
     this.persistData(type, namespaceRecords);
     try {
-      SmackHooks.afterDelete(store, type, recordHash)
+      SmackHooks.afterDelete(hash, type, recordHash)
     } catch(e) {
       return Ember.RSVP.reject(new Error("After delete hook failed on: " + " type '" + type.modelName + "' for the id '" + id + "'.\n\n" + e));
     }

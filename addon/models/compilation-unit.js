@@ -4,7 +4,7 @@ import { belongsTo, hasMany } from 'ember-data/relationships';
 
 export default Model.extend({
 	name : attr('string'),
-	pack : attr('string'),
+	pack : belongsTo('package', { inverse: 'units' }),
 	funcNames : attr(),
 	source : attr('string'),
 	testData : hasMany('testDatum')

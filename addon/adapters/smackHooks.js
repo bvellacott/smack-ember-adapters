@@ -1,4 +1,7 @@
-import compile from 'npm:smack-js-compiler';
+import Smack from 'npm:smack-js-compiler';
+var compile = Smack.compile;
+var createPackage = Smack.createPackage;
+var removePackage = Smack.removePackage;
 
 function deserialiseNamespace(nsString) {
 	var ns = JSON.parse(nsString);
@@ -66,12 +69,13 @@ var getFuncNamespace = function(pack) {
 }
 
 var compileAndReturnAnonymousFunc = function(source, argNames) {
-	delete namespace.anonymous;
-	var anonFuncSrc = 'pack anonymous;\n func anonymous(' + argNames.join(', ') + ') {\n' + 
+	removePackage('anonymous', namespace);
+	createPackage('anonymous', namespace);
+	var anonFuncSrc = 'func anonymous(' + argNames.join(', ') + ') {\n' +
 	source + '\n' +
 	generateReturnObjectAssignSrc('_rEToBJ_', argNames) +
 	'\n}';
-	var unit = compile(name, anonFuncSrc, namespace);
+	var unit = compile('anonymous', anonFuncSrc, namespace);
 	console.log(anonFuncSrc);
 	return namespace.anonymous._f.anonymous;
 }
@@ -84,27 +88,53 @@ var generateReturnObjectAssignSrc = function(objName, argNames) {
 	return src;
 }
 
+var getPackSequence = function(packRec, hash) {
+	if(!hash.package)
+		hash.package = { records: {} };
+	var records = hash.package.records;
+	if(typeof packRec === 'string')
+		packRec = records[packRec];
+	var sequence = [];
+	for(var cur = packRec; !!cur; cur = records[cur.parent])
+ 		sequence.push(cur.name);
+	return sequence.reverse();
+}
+
 
 var doNothing = function() {};
 
 var findHandlers = {
-	connection : function(con) {
+	connection : function(con, hash) {
 		con.password = null;
 	},
 }
 
+var validate = {
+	'compilation-unit' : function(unitRec, hash) {
+		if(!hash.package.records[unitRec.pack])
+			throw 'a compilation unit must have a reference to an existing package';
+	},
+};
+
 var beforeCreateHandlers = {
-	'connection' : function(connection) {
+	'connection' : function(connection, hash) {
 		connection.session = 'mock session id';
 	},
-	'compilation-unit' : function(unitRec) {
+	'package' : function(packageRec, hash) {
+		var pack = getPackSequence(packageRec, hash);
+		createPackage(pack, namespace);
+		serialiseNamespace();
+	},
+	'compilation-unit' : function(unitRec, hash) {
+		validate['compilation-unit'](unitRec, hash);
+		var pack = getPackSequence(unitRec.pack, hash);
 		var unit = null;
-		unit = compile(unitRec.name, unitRec.source, namespace);
-		unitRec.pack = unit.pack;
+		unit = compile(pack, unitRec.source, namespace);
+//		unitRec.pack = unit.pack;
 		unitRec.funcNames = unit.funcNames;
 		serialiseNamespace();
 	},
-	'execute-event' : function(execRec) {
+	'execute-event' : function(execRec, hash) {
 		try {
 			var pack = execRec.name.split('.');
 			var name = pack.pop();
@@ -116,7 +146,7 @@ var beforeCreateHandlers = {
 			execRec.errorMessage = e;
 		}
 	},
-	'execute-anonymous-event' : function(execRec) {
+	'execute-anonymous-event' : function(execRec, hash) {
 		try {
 			var args = execRec.arguments;
 			var argNames = [];
@@ -124,7 +154,7 @@ var beforeCreateHandlers = {
 			for(var argName in args) {
 				argNames.push(argName);
 				argValues.push(args[argName]);
-			} 
+			}
 			var func = compileAndReturnAnonymousFunc(execRec.source, argNames);
 			serialiseNamespace();
 			execRec.result = func.apply(namespace, argValues);
@@ -140,9 +170,16 @@ var afterCreateHandlers = {
 }
 
 var beforeDeleteHandlers = {
-	'compilation-unit' : function(unitRec) {
-		var funcs = getFuncNamespace(unitRec.pack);
-		var funcNames = unitRec.funcNames;
+	'package' : function(packageRec, hash) {
+		var pack = getPackSequence(packageRec, hash);
+		removePackage(pack, namespace);
+		serialiseNamespace();
+	},
+	'compilation-unit' : function(unitRec, hash) {
+		var oldRec = hash['compilation-unit'].records[unitRec.id];
+		var pack = getPackSequence(oldRec.pack, hash);
+		var funcs = getFuncNamespace(pack);
+		var funcNames = oldRec.funcNames;
 		for(var i = 0; i < funcNames.length; i++)
 			delete funcs[funcNames[i]];
 		serialiseNamespace();
@@ -153,9 +190,13 @@ var afterDeleteHandlers = {
 }
 
 var beforeUpdateHandlers = {
-	'compilation-unit' : function(unitRec) {
-		beforeDeleteHandlers['compilation-unit'](unitRec);
-		beforeCreateHandlers['compilation-unit'](unitRec);
+	'package' : function(packageRec, hash) {
+//		throw "package updating isn't currently supported";
+	},
+	'compilation-unit' : function(unitRec, hash) {
+		validate['compilation-unit'](unitRec, hash);
+		beforeDeleteHandlers['compilation-unit'](unitRec, hash);
+		beforeCreateHandlers['compilation-unit'](unitRec, hash);
 	},
 }
 
@@ -169,47 +210,47 @@ export default {
 	_ns : namespace,
 	getPackNamespace : getPackNamespace,
 	getFuncNamespace : getFuncNamespace,
-	onFind : function(store, type, result, allowRecursive) {
+	onFind : function(hash, type, result, allowRecursive) {
 		var handle = findHandlers[type.modelName];
-		if(handle) handle(result);
+		if(handle) handle(result, hash);
 	},
-	onFindMany : function(store, type, result, allowRecursive) {
-		var handle = findHandlers[type.modelName];
-		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
-	},
-	onQuery : function(store, type, result, allowRecursive) {
+	onFindMany : function(hash, type, result, allowRecursive) {
 		var handle = findHandlers[type.modelName];
 		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+			handle(result[i], hash);
 	},
-	onFindAll : function(store, type, result) {
+	onQuery : function(hash, type, result, allowRecursive) {
 		var handle = findHandlers[type.modelName];
 		for(var i = 0; handle && i < result.length; i++)
-			handle(result[i]);
+			handle(result[i], hash);
 	},
-	beforeCreate : function(store, type, result) {
+	onFindAll : function(hash, type, result) {
+		var handle = findHandlers[type.modelName];
+		for(var i = 0; handle && i < result.length; i++)
+			handle(result[i], hash);
+	},
+	beforeCreate : function(hash, type, result) {
 		var handle = beforeCreateHandlers[type.modelName];
-		if(handle) handle(result);
+		if(handle) handle(result, hash);
 	},
-	afterCreate : function(store, type, result) {
+	afterCreate : function(hash, type, result) {
 		var handle = afterCreateHandlers[type.modelName];
-		if(handle) handle(result);
+		if(handle) handle(result, hash);
 	},
-	beforeUpdate : function(store, type, result) {
+	beforeUpdate : function(hash, type, result) {
 		var handle = beforeUpdateHandlers[type.modelName];
-		if(handle) handle(result);
+		if(handle) handle(result, hash);
 	},
-	afterUpdate : function(store, type, result) {
+	afterUpdate : function(hash, type, result) {
 		var handle = afterUpdateHandlers[type.modelName];
-		if(handle) handle(result);
+		if(handle) handle(result, hash);
 	},
-	beforeDelete : function(store, type, result) {
+	beforeDelete : function(hash, type, result) {
 		var handle = beforeDeleteHandlers[type.modelName];
-		if(handle) handle(result);
+		if(handle) handle(result, hash);
 	},
-	afterDelete : function(store, type, result) {
+	afterDelete : function(hash, type, result) {
 		var handle = afterDeleteHandlers[type.modelName];
-		if(handle) handle(result);
+		if(handle) handle(result, hash);
 	},
 };
