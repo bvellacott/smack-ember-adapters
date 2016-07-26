@@ -73,55 +73,79 @@ test('connection create and find - hook', function(t) {
 });
 
 test('package create and delete', function(t){
-  t.expect(1);
+  t.expect(7);
   const done = t.async();
 
   var parentPack = run(store, 'createRecord', 'package', { name : 'parent'});
+
   run(parentPack, 'save').then(() => {
+    t.ok(parentPack.id, 'parent package has an id');
+    t.ok(SmackHooks.getPackNamespace('parent'), 'parent package created in the namespace');
     var childPack = run(store, 'createRecord', 'package', { name : 'child' });
     childPack.set('parent', parentPack);
+
     run(childPack, 'save').then(() => {
       t.ok(childPack.id, 'child package has an id');
-      done();
+      t.ok(SmackHooks.getPackNamespace('parent.child'), 'child package created in the namespace');
+      var grandChildPack = run(store, 'createRecord', 'package', { name : 'grandChild' });
+      grandChildPack.set('parent', childPack);
+
+      run(grandChildPack, 'save').then(() => {
+        t.ok(grandChildPack.id, 'grand child package has an id');
+        t.ok(SmackHooks.getPackNamespace('parent.child.grandChild'), 'grandChild package created in the namespace');
+        run(parentPack, 'destroyRecord').then(() => {
+          run(store, 'findAll', 'package').then(packs => {
+            run(store, 'unloadAll', 'package');
+            t.equal(get(packs, 'length'), 0, 'all packages were deleted');
+            done();
+          });
+        });
+      });
     });
   });
   var parent = run(store, 'createRecord', 'package', { name : 'parent'});
 });
 
 test('compilation-unit create, update and delete', function(t) {
-  t.expect(15);
+  t.expect(16);
   const done = t.async();
 
   // create
   var mathPack = run(store, 'createRecord', 'package', { name : 'math'});
   run(mathPack, 'save').then(() => {
-    var unit = run(store, 'createRecord', 'compilation-unit',
-        { name : 'sum', pack: mathPack, source : 'func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' });
-    run(unit, 'save').then(() => {
-      t.equal(get(unit, 'name'), 'sum', 'name unchanged');
-      t.equal(get(unit, 'source'), 'func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
-      t.equal(get(get(unit, 'pack'), 'id'), get(mathPack, 'id'), 'package set');
-      t.deepEqual(get(unit, 'funcNames'), ['add', 'sub'], 'function names set');
-      t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
-      t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
-
-      run(unit, 'set', 'source', 'func add(a, b) { ret a + b; } func error() { nonexistent[param] = 1; }');
-
-      run(unit, 'save').then(unit => {
+    var mathSumsPack = run(store, 'createRecord', 'package', { name : 'sums'});
+    mathSumsPack.set('parent', mathPack);
+    run(mathSumsPack, 'save').then(() => {
+      var unit = run(store, 'createRecord', 'compilation-unit',
+          { name : 'sum', pack: mathPack, source : 'func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }' });
+      run(unit, 'save').then(() => {
         t.equal(get(unit, 'name'), 'sum', 'name unchanged');
-        t.equal(get(unit, 'source'), 'func add(a, b) { ret a + b; } func error() { nonexistent[param] = 1; }', 'source updated');
-        t.equal(get(get(unit, 'pack'), 'id'), get(mathPack, 'id'), 'package unchanged');
-        t.deepEqual(get(unit, 'funcNames'), ['add', 'error'], 'function names updated');
-        t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function still in the math namespace');
-        t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
+        t.equal(get(unit, 'source'), 'func add(a, b) { ret a + b; } func sub(a, b) { ret a - b; }', 'source unchanged');
+        t.equal(get(get(unit, 'pack'), 'id'), get(mathPack, 'id'), 'package set');
+        t.deepEqual(get(unit, 'funcNames'), ['add', 'sub'], 'function names set');
+        t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'function', 'add function created in the math namespace');
+        t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'function', 'sub function created in the math namespace');
 
-        var id = get(unit, 'id');
-        unit.deleteRecord();
-        run(unit, 'save').then(() => {
-          t.notOk(store.hasRecordForId('compilation-unit', id), 'record still in store');
+        run(unit, 'set', 'source', 'func add(a, b) { ret a + b; } func error() { nonexistent[param] = 1; }');
+        run(unit, 'set', 'pack', mathSumsPack);
+
+        run(unit, 'save').then(unit => {
+          t.equal(get(unit, 'name'), 'sum', 'name unchanged');
+          t.equal(get(unit, 'source'), 'func add(a, b) { ret a + b; } func error() { nonexistent[param] = 1; }', 'source updated');
+          t.equal(get(get(unit, 'pack'), 'id'), get(mathSumsPack, 'id'), 'package updated');
+          t.deepEqual(get(unit, 'funcNames'), ['add', 'error'], 'function names updated');
+          t.equal(typeof SmackHooks.getFuncNamespace('math.sums').add, 'function', 'add function moved to the math.sums namespace');
+          t.equal(typeof SmackHooks.getFuncNamespace('math.sums').sub, 'undefined', 'sub function not copied over to the math.sums namespace');
           t.equal(typeof SmackHooks.getFuncNamespace('math').add, 'undefined', 'add function removed from the math namespace');
           t.equal(typeof SmackHooks.getFuncNamespace('math').sub, 'undefined', 'sub function removed from the math namespace');
-          done();
+
+          var id = get(unit, 'id');
+          unit.deleteRecord();
+          run(unit, 'save').then(() => {
+            t.notOk(store.hasRecordForId('compilation-unit', id), 'record still in store');
+            t.equal(typeof SmackHooks.getFuncNamespace('math.sums').add, 'undefined', 'add function removed from the math namespace');
+            done();
+          });
         });
       });
     });

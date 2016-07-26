@@ -103,6 +103,24 @@ var getPackSequence = function(packRec, hash) {
 	return sequence.reverse();
 }
 
+var removePackagesAndFunctions = function(pack, hash) {
+	var cur = pack;
+	var packs = hash.package.records;
+	var childPacks = [];
+	for(var id in packs)
+		if(packs[id].parent === pack.id)
+			childPacks.push(packs[id]);pack
+	childPacks.forEach(c => { removePackagesAndFunctions(c, hash) });
+	if(hash['compilation-unit'] && hash['compilation-unit'].records) {
+		var units = hash['compilation-unit'].records;
+		var childUnits = [];
+		for(var id in units)
+			if(units[id].pack === pack.id)
+				childUnits.push(units[id]);
+		childUnits.forEach(u => { delete units[u.id]; });
+	}
+	delete packs[pack.id];
+}
 
 var doNothing = function() {};
 
@@ -181,6 +199,7 @@ var beforeDeleteHandlers = {
 	'package' : function(packageRec, hash) {
 		var pack = getPackSequence(packageRec, hash);
 		removePackage(pack, namespace);
+		removePackagesAndFunctions(packageRec, hash);
 		serialiseNamespace();
 	},
 	'compilation-unit' : function(unitRec, hash) {

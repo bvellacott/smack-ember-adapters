@@ -42,7 +42,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     */
   findRecord: function(store, type, id, opts) {
     var allowRecursive = true;
-    var namespace = this._namespaceForType(type);
+    var namespace = this._namespaceForType(type, this.loadData());
     try {
       var record = Ember.A(fromStorageForm(store, type, namespace.records[id], this.loadData()));
     } catch(e) { return Ember.RSVP.reject(new Error(e)); }
@@ -78,7 +78,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   },
 
   findMany: function (store, type, ids, opts) {
-    var namespace = this._namespaceForType(type);
+    var namespace = this._namespaceForType(type, this.loadData());
     var allowRecursive = true,
       results = Ember.A([]), record;
 
@@ -136,8 +136,8 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   //
   //    { complete: true, name: /foo|bar/ }
   query: function (store, type, query /*recordArray*/) {
-    var namespace = this._namespaceForType(type);
     var hash = this.loadData();
+    var namespace = this._namespaceForType(type, hash);
     var results;
     try {
       var records = {};
@@ -177,7 +177,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   },
 
   findAll: function (store, type) {
-    var namespace = this._namespaceForType(type),
+    var namespace = this._namespaceForType(type, this.loadData()),
       results = Ember.A([]);
 
     try {
@@ -193,11 +193,10 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   },
 
   createRecord: function (store, type, snapshot) {
-    var namespaceRecords = this._namespaceForType(type);
+    var hash = this.loadData();
+    var namespaceRecords = this._namespaceForType(type, hash);
     var serializer = store.serializerFor(type.modelName);
     var recordHash = serializer.serialize(snapshot, {includeId: true});
-
-    var hash = this.loadData();
 
     try {
       SmackHooks.beforeCreate(hash, type, recordHash);
@@ -208,7 +207,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       namespaceRecords.records[recordHash.id] = toStorageForm(store, type, recordHash);
     } catch(e) { return Ember.RSVP.reject(new Error(e)); }
 
-    this.persistData(type, namespaceRecords);
+    this.persistData(type, namespaceRecords, hash);
     try {
       SmackHooks.afterCreate(hash, type, recordHash);
     } catch(e) {
@@ -218,12 +217,11 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   },
 
   updateRecord: function (store, type, snapshot) {
-    var namespaceRecords = this._namespaceForType(type);
+    var hash = this.loadData();
+    var namespaceRecords = this._namespaceForType(type, hash);
     var id = snapshot.id;
     var serializer = store.serializerFor(type.modelName);
     var recordHash = serializer.serialize(snapshot, {includeId: true});
-
-    var hash = this.loadData();
 
     try {
       SmackHooks.beforeUpdate(hash, type, recordHash)
@@ -234,7 +232,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       namespaceRecords.records[id] = toStorageForm(store, type, recordHash);
     } catch(e) { return Ember.RSVP.reject(new Error(e)); }
 
-    this.persistData(type, namespaceRecords);
+    this.persistData(type, namespaceRecords, hash);
     try {
       SmackHooks.afterUpdate(hash, type, recordHash)
     } catch(e) {
@@ -244,11 +242,10 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
   },
 
   deleteRecord: function (store, type, snapshot) {
-    var namespaceRecords = this._namespaceForType(type);
+    var hash = this.loadData();
+    var namespaceRecords = this._namespaceForType(type, hash);
     var id = snapshot.id;
     var recordHash = namespaceRecords.records[id];
-
-    var hash = this.loadData();
 
     try {
       SmackHooks.beforeDelete(hash, type, recordHash)
@@ -256,7 +253,7 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
       return Ember.RSVP.reject(new Error("Before delete hook failed on: " + " type '" + type.modelName + "' for the id '" + recordHash.id + "'.\n\n" + e));
     }
     delete namespaceRecords.records[id];
-    this.persistData(type, namespaceRecords);
+    this.persistData(type, namespaceRecords, hash);
     try {
       SmackHooks.afterDelete(hash, type, recordHash)
     } catch(e) {
@@ -280,13 +277,13 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     return storage ? JSON.parse(storage) : {};
   },
 
-  persistData: function(type, data) {
+  persistData: function(type, data, hash) {
     var modelNamespace = this.modelNamespace(type);
-    var localStorageData = this.loadData();
+    // var localStorageData = this.loadData();
 
-    localStorageData[modelNamespace] = data;
+    hash[modelNamespace] = data;
 
-    this.getLocalStorage().setItem(this.adapterNamespace(), JSON.stringify(localStorageData));
+    this.getLocalStorage().setItem(this.adapterNamespace(), JSON.stringify(hash/*localStorageData*/));
   },
 
   getLocalStorage: function() {
@@ -320,9 +317,9 @@ const LSAdapter = DS.Adapter.extend(Ember.Evented, {
     return localStorage;
   },
 
-  _namespaceForType: function (type) {
+  _namespaceForType: function (type, storage) {
     var namespace = this.modelNamespace(type);
-    var storage   = this.loadData();
+    // var storage   = this.loadData();
 
     return storage[namespace] || {records: {}};
   },
