@@ -1,5 +1,8 @@
 import Smack from 'npm:smack-js-compiler';
+// import { toStorageForm, fromStorageForm } from 'smack-ember-adapters/adapters/storageForm';
+
 var compile = Smack.compile;
+var getPackage = Smack.getPackage;
 var createPackage = Smack.createPackage;
 var removePackage = Smack.removePackage;
 
@@ -119,11 +122,13 @@ var validate = {
 var beforeCreateHandlers = {
 	'connection' : function(connection, hash) {
 		connection.session = 'mock session id';
+		return {};
 	},
 	'package' : function(packageRec, hash) {
 		var pack = getPackSequence(packageRec, hash);
 		createPackage(pack, namespace);
 		serialiseNamespace();
+		return {};
 	},
 	'compilation-unit' : function(unitRec, hash) {
 		validate['compilation-unit'](unitRec, hash);
@@ -133,6 +138,7 @@ var beforeCreateHandlers = {
 //		unitRec.pack = unit.pack;
 		unitRec.funcNames = unit.funcNames;
 		serialiseNamespace();
+		return {};
 	},
 	'execute-event' : function(execRec, hash) {
 		try {
@@ -145,6 +151,7 @@ var beforeCreateHandlers = {
 			execRec.success = false;
 			execRec.errorMessage = e;
 		}
+		return {};
 	},
 	'execute-anonymous-event' : function(execRec, hash) {
 		try {
@@ -163,6 +170,7 @@ var beforeCreateHandlers = {
 			execRec.success = false;
 			execRec.errorMessage = e;
 		}
+		return {};
 	},
 }
 

@@ -101,15 +101,15 @@ test('query', function(assert) {
   });
 });
 
-test('query rejects promise when there are no records', function(assert) {
-  const done = assert.async();
-  assert.expect(2);
-  run(store, 'query', 'list', 'where name = "unknown"'/*{name: /unknown/}*/).catch(() => {
-    assert.ok(true);
-    assert.equal(store.hasRecordForId('list', 'unknown'), false);
-    done();
-  });
-});
+// test('query rejects promise when there are no records', function(assert) {
+//   const done = assert.async();
+//   assert.expect(2);
+//   run(store, 'query', 'list', 'where name = "unknown"'/*{name: /unknown/}*/).catch(() => {
+//     assert.ok(true);
+//     assert.equal(store.hasRecordForId('list', 'unknown'), false);
+//     done();
+//   });
+// });
 
 test('findAll', function(assert) {
   assert.expect(4);
@@ -205,8 +205,9 @@ test('deleteRecord', function(assert) {
   const done = assert.async();
 
   const assertListIsDeleted = () => {
-    return store.query('list', 'where name = "one"'/*{name: 'one'}*/).catch(() => {
-      assert.ok(true, 'List was deleted');
+    // return store.query('list', 'where name = "one"'/*{name: 'one'}*/).catch(() => {
+    return store.query('list', 'where name = "one"'/*{name: 'one'}*/).then(records => {
+      assert.equal(get(records, 'length'), 0, 'List was deleted');
       done();
     });
   };
