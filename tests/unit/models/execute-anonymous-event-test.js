@@ -2,7 +2,7 @@ import Ember from 'ember';
 import { moduleForModel, test } from 'ember-qunit';
 import SmackHooks from 'smack-ember-adapters/adapters/smackHooks';
 
-const {run, get, set} = Ember;
+const {run} = Ember;
 
 moduleForModel('execute-anonymous-event', 'Unit | Model | execute anonymous event', {
   // Specify the other units that are required for this test.

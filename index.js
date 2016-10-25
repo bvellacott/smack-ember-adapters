@@ -2,5 +2,5 @@
 'use strict';
 
 module.exports = {
- 	name: 'smack-ember-adapters'
+  name: 'smack-ember-adapters'
 };

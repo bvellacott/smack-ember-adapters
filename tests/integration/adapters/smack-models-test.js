@@ -1,7 +1,6 @@
 import setupStore from 'dummy/tests/helpers/store';
 import Ember from 'ember';
 import FIXTURES from 'dummy/tests/helpers/smack-model-fixtures';
-import DS from 'ember-data';
 import LSAdapter from 'smack-ember-adapters/adapters/ls-adapter';
 
 // hooks
@@ -17,7 +16,7 @@ import TestDatum from 'smack-ember-adapters/models/test-datum';
 
 
 import {module, test} from 'qunit';
-const {run, get, set} = Ember;
+const {run, get} = Ember;
 
 let env, store;
 
@@ -103,7 +102,7 @@ test('package create and delete', function(t){
       });
     });
   });
-  var parent = run(store, 'createRecord', 'package', { name : 'parent'});
+  run(store, 'createRecord', 'package', { name : 'parent'});
 });
 
 test('compilation-unit create, update and delete', function(t) {
