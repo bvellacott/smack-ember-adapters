@@ -1,3 +1,6 @@
+[![Build
+Status](https://travis-ci.org/bvellacott/smack-ember-adapters.svg?branch=master)](https://travis-ci.org/bvellacott/smack-ember-adapters)
+
 # Smack-ember-adapters
 
 This README outlines the details of collaborating on this Ember addon.
